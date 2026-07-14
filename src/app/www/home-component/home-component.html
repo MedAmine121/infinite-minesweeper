@@ -1,0 +1,28 @@
+<section class="game-shell">
+  <div class="board" role="grid" aria-label="Minesweeper board">
+    <div class="row" *ngFor="let row of board; let rowIndex = index">
+      <button
+        type="button"
+        class="cell"
+        [class.pressed]="isPressed(rowIndex, colIndex)"
+        [class.flagged]="cell.isFlagged"
+        *ngFor="let cell of row; let colIndex = index"
+        [disabled]="gameOver || gameWon || cell.isRevealed"
+        (click)="revealCell(rowIndex, colIndex)"
+        (contextmenu)="toggleFlag($event, rowIndex, colIndex)"
+        (mousedown)="onMouseDown(rowIndex, colIndex)"
+        (mouseup)="onMouseUp(rowIndex, colIndex)"
+        (mouseleave)="onMouseUp(rowIndex, colIndex)"
+      >
+        <ng-container *ngIf="cell.isRevealed; else hidden">
+          <span *ngIf="cell.isMine">💣</span>
+          <span *ngIf="!cell.isMine && cell.adjacentMines > 0">{{ cell.adjacentMines }}</span>
+          <span *ngIf="!cell.isMine && cell.adjacentMines === 0">·</span>
+        </ng-container>
+        <ng-template #hidden>
+          <span *ngIf="cell.isFlagged">🚩</span>
+        </ng-template>
+      </button>
+    </div>
+  </div>
+</section>
