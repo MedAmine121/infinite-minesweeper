@@ -1,13 +1,29 @@
 <section class="game-shell">
+  <div class="hud">
+    <div class="hud-left">
+      <div class="hud-item">
+        <span class="hud-label">Lives</span>
+        <span class="hud-value">{{ '❤️'.repeat(lives) || '💔' }}</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">Score</span>
+        <span class="hud-value">{{ score }}</span>
+      </div>
+    </div>
+    <button class="restart-button" type="button" (click)="resetGame()">
+      Restart
+    </button>
+  </div>
+
   <div class="board" role="grid" aria-label="Minesweeper board">
     <div class="row" *ngFor="let row of board; let rowIndex = index">
       <button
         type="button"
         class="cell"
-        [class.pressed]="isPressed(rowIndex, colIndex)"
+        [class.pressed]="isPressed(rowIndex, colIndex) || cell.isRevealed"
         [class.flagged]="cell.isFlagged"
         *ngFor="let cell of row; let colIndex = index"
-        [disabled]="gameOver || gameWon || cell.isRevealed"
+        [disabled]="gameOver || gameWon"
         (click)="revealCell(rowIndex, colIndex)"
         (contextmenu)="toggleFlag($event, rowIndex, colIndex)"
         (mousedown)="onMouseDown(rowIndex, colIndex)"
@@ -22,6 +38,16 @@
         <ng-template #hidden>
           <span *ngIf="cell.isFlagged">🚩</span>
         </ng-template>
+      </button>
+    </div>
+  </div>
+
+  <div class="game-over-overlay" *ngIf="gameOver || gameWon">
+    <div class="game-over-card">
+      <h2>{{ gameWon ? 'Victory!' : 'Game Over' }}</h2>
+      <p class="game-over-score">Final score: {{ score }}</p>
+      <button type="button" class="restart-button" (click)="resetGame()">
+        Play again
       </button>
     </div>
   </div>
