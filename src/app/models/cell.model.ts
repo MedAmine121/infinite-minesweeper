@@ -3,6 +3,8 @@ export class Cell {
   isRevealed = false;
   adjacentMines = 0;
   isFlagged = false;
+  row = 0;
+  col = 0;
 
   constructor(init?: Partial<Cell>) {
     Object.assign(this, init);
@@ -36,7 +38,6 @@ export class Cell {
         }
       }
     }
-
     return board;
   }
 

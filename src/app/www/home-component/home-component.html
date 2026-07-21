@@ -10,45 +10,61 @@
         <span class="hud-value">{{ score }}</span>
       </div>
     </div>
-    <button class="restart-button" type="button" (click)="resetGame()">
-      Restart
-    </button>
+    <button class="restart-button" type="button" (click)="resetGame()">Restart</button>
   </div>
 
   <div class="board" role="grid" aria-label="Minesweeper board">
-    <div class="row" *ngFor="let row of board; let rowIndex = index">
-      <button
-        type="button"
-        class="cell"
-        [class.pressed]="isPressed(rowIndex, colIndex) || cell.isRevealed"
-        [class.flagged]="cell.isFlagged"
-        *ngFor="let cell of row; let colIndex = index"
-        [disabled]="gameOver || gameWon"
-        (click)="revealCell(rowIndex, colIndex)"
-        (contextmenu)="toggleFlag($event, rowIndex, colIndex)"
-        (mousedown)="onMouseDown(rowIndex, colIndex)"
-        (mouseup)="onMouseUp(rowIndex, colIndex)"
-        (mouseleave)="onMouseUp(rowIndex, colIndex)"
-      >
-        <ng-container *ngIf="cell.isRevealed; else hidden">
-          <span *ngIf="cell.isMine">💣</span>
-          <span *ngIf="!cell.isMine && cell.adjacentMines > 0">{{ cell.adjacentMines }}</span>
-          <span *ngIf="!cell.isMine && cell.adjacentMines === 0">·</span>
-        </ng-container>
-        <ng-template #hidden>
-          <span *ngIf="cell.isFlagged">🚩</span>
-        </ng-template>
-      </button>
-    </div>
+    @for (gridRow of board.rows; track gridRow[0]; let gridRowIndex = $index) {
+      <div class="grid-row">
+        @for (grid of board.getColumnsFor(gridRow[1]); track grid[0]; let gridColIndex = $index) {
+          <div class="grid-container">
+            @for (cellRow of grid[1].board; track cellRow; let cellRowIndex = $index) {
+              <div class="row">
+                @for (cell of cellRow; track cell; let cellColIndex = $index) {
+                  <button
+                    type="button"
+                    class="cell"
+                    [class.pressed]="isPressed(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex) || cell.isRevealed"
+                    [class.flagged]="cell.isFlagged"
+                    [disabled]="gameOver || gameWon"
+                    (click)="revealCell(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
+                    (contextmenu)="toggleFlag($event, gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
+                    (mousedown)="onMouseDown(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
+                    (mouseup)="onMouseUp(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
+                    (mouseleave)="onMouseUp(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
+                  >
+                    @if (cell.isRevealed) {
+                      @if (cell.isMine) {
+                        <span>💣</span>
+                      }
+                      @if (!cell.isMine && cell.adjacentMines > 0) {
+                        <span [class]="'cell-' + cell.adjacentMines">{{ cell.adjacentMines }}</span>
+                      }
+                      @if (!cell.isMine && cell.adjacentMines === 0) {
+                        <span>·</span>
+                      }
+                    } @else {
+                      @if (cell.isFlagged) {
+                        <span>🚩</span>
+                      }
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
   </div>
 
-  <div class="game-over-overlay" *ngIf="gameOver || gameWon">
-    <div class="game-over-card">
-      <h2>{{ gameWon ? 'Victory!' : 'Game Over' }}</h2>
-      <p class="game-over-score">Final score: {{ score }}</p>
-      <button type="button" class="restart-button" (click)="resetGame()">
-        Play again
-      </button>
+  @if (gameOver || gameWon) {
+    <div class="game-over-overlay">
+      <div class="game-over-card">
+        <h2>{{ gameWon ? 'Victory!' : 'Game Over' }}</h2>
+        <p class="game-over-score">Final score: {{ score }}</p>
+        <button type="button" class="restart-button" (click)="resetGame()">Play again</button>
+      </div>
     </div>
-  </div>
+  }
 </section>
