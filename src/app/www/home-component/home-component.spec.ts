@@ -20,22 +20,26 @@ describe('HomeComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should initialize an 8x8 board with 10 mines', () => {
+  it('should initialize a 3x3 grid of 8x8 grids with 10 mines each', () => {
     component.resetGame();
 
-    expect(component.board.length).toBe(8);
-    expect(component.board.every((row) => row.length === 8)).toBe(true);
-    expect(component.board.flat().filter((cell) => cell.isMine).length).toBe(10);
+    expect(component.grids.length).toBe(3);
+    expect(component.grids.every((row) => row.length === 3)).toBe(true);
+
+    const totalMines = component.grids
+      .flat()
+      .reduce((sum, grid) => sum + grid.board.flat().filter((cell) => cell.isMine).length, 0);
+    expect(totalMines).toBe(90); // 3x3 grids with 10 mines each
   });
 
   it('should toggle a flag on a hidden cell', () => {
     component.resetGame();
     const event = { preventDefault: () => undefined } as MouseEvent;
 
-    component.toggleFlag(event, 0, 0);
-    expect(component.board[0][0].isFlagged).toBe(true);
+    component.toggleFlag(event, 0, 0, 0, 0);
+    expect(component.grids[0][0].board[0][0].isFlagged).toBe(true);
 
-    component.toggleFlag(event, 0, 0);
-    expect(component.board[0][0].isFlagged).toBe(false);
+    component.toggleFlag(event, 0, 0, 0, 0);
+    expect(component.grids[0][0].board[0][0].isFlagged).toBe(false);
   });
 });
