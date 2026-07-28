@@ -24,14 +24,14 @@
                   <button
                     type="button"
                     class="cell"
-                    [class.pressed]="isPressed(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex) || cell.isRevealed"
+                    [class.pressed]="isPressed(gridRow[0], grid[0], cellRowIndex, cellColIndex) || cell.isRevealed"
                     [class.flagged]="cell.isFlagged"
                     [disabled]="gameOver || gameWon"
-                    (click)="revealCell(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
-                    (contextmenu)="toggleFlag($event, gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
-                    (mousedown)="onMouseDown(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
-                    (mouseup)="onMouseUp(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
-                    (mouseleave)="onMouseUp(gridRowIndex, gridColIndex, cellRowIndex, cellColIndex)"
+                    (click)="revealCell(gridRow[0], grid[0], cellRowIndex, cellColIndex)"
+                    (contextmenu)="toggleFlag($event, gridRow[0], grid[0], cellRowIndex, cellColIndex)"
+                    (mousedown)="onMouseDown(gridRow[0], grid[0], cellRowIndex, cellColIndex)"
+                    (mouseup)="onMouseUp(gridRow[0], grid[0], cellRowIndex, cellColIndex)"
+                    (mouseleave)="onMouseUp(gridRow[0], grid[0], cellRowIndex, cellColIndex)"
                   >
                     @if (cell.isRevealed) {
                       @if (cell.isMine) {
