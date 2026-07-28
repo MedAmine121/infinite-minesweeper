@@ -62,7 +62,7 @@ export class Grid {
   /**
    * Count adjacent mines including mines from neighboring grids
    */
-  countAdjacentMines(row: number, col: number, allGrids: Grid[][]): number {
+  countAdjacentMines(row: number, col: number, allGrids: Record<number, Record<number, Grid>>): number {
     let count = 0;
     for (let r = Math.max(0, row - 1); r <= Math.min(this.rows - 1, row + 1); r += 1) {
       for (let c = Math.max(0, col - 1); c <= Math.min(this.cols - 1, col + 1); c += 1) {
@@ -77,59 +77,13 @@ export class Grid {
         }
       }
     }
-
-    // Check adjacent grids
-    for (let dRow = -1; dRow <= 1; dRow += 1) {
-      for (let dCol = -1; dCol <= 1; dCol += 1) {
-        // Skip this grid
-        if (dRow === 0 && dCol === 0) {
-          continue;
-        }
-
-        const neighborGridRow = this.gridRow + dRow;
-        const neighborGridCol = this.gridCol + dCol;
-
-        // Check if neighbor grid exists
-        if (
-          neighborGridRow < 0 ||
-          neighborGridRow >= allGrids.length ||
-          neighborGridCol < 0 ||
-          neighborGridCol >= allGrids[0].length
-        ) {
-          continue;
-        }
-
-        const neighborGrid = allGrids[neighborGridRow][neighborGridCol];
-
-        // Check the appropriate cells in the neighbor grid
-        for (let r = Math.max(0, row - 1); r <= Math.min(this.rows - 1, row + 1); r += 1) {
-          for (let c = Math.max(0, col - 1); c <= Math.min(this.cols - 1, col + 1); c += 1) {
-            // Map the neighbor grid's cells based on the direction
-            const neighborRow = dRow === -1 ? this.rows - 1 : dRow === 1 ? 0 : r;
-            const neighborCol = dCol === -1 ? this.cols - 1 : dCol === 1 ? 0 : c;
-
-            if (
-              neighborRow >= 0 &&
-              neighborRow < neighborGrid.rows &&
-              neighborCol >= 0 &&
-              neighborCol < neighborGrid.cols
-            ) {
-              if (neighborGrid.board[neighborRow][neighborCol].isMine) {
-                count += 1;
-              }
-            }
-          }
-        }
-      }
-    }
-
     return count;
   }
 
   /**
    * Calculate adjacent mines for all cells in the grid
    */
-  calculateAdjacentMines(allGrids: Grid[][]): void {
+  calculateAdjacentMines(allGrids: Record<number, Record<number, Grid>>): void {
     for (let row = 0; row < this.rows; row += 1) {
       for (let col = 0; col < this.cols; col += 1) {
         if (!this.board[row][col].isMine) {

@@ -28,10 +28,12 @@ export class Board {
         const self = this;
         return {
             *[Symbol.iterator]() {
-                for (const rStr in self.grids) {
-                    if (Object.prototype.hasOwnProperty.call(self.grids, rStr)) {
-                        yield [Number(rStr), self.grids[rStr]];
-                    }
+                const rows = Object.keys(self.grids)
+                    .map(Number)
+                    .sort((a, b) => a - b);
+
+                for (const row of rows) {
+                    yield [row, self.grids[row]];
                 }
             }
         };
@@ -44,7 +46,10 @@ export class Board {
     getColumnsFor(colsRecord: Record<number, Grid>): Iterable<[col: number, grid: Grid]> {
         return {
             *[Symbol.iterator]() {
-                for (const cStr in colsRecord) {
+                const cols = Object.keys(colsRecord)
+                    .map(Number)
+                    .sort((a, b) => a - b);
+                for (const cStr of cols) {
                     if (Object.prototype.hasOwnProperty.call(colsRecord, cStr)) {
                         yield [Number(cStr), colsRecord[cStr]];
                     }
@@ -73,6 +78,7 @@ export class Board {
     unlockGrid(grid: Grid): void {
         grid.unlocked = true;
         this.createAdjacentGrids(grid);
+        grid.calculateAdjacentMines(this.grids);
     }
     createAdjacentGrids(grid: Grid): void {
         for (let dRow = -1; dRow <= 1; dRow++) {
@@ -88,5 +94,4 @@ export class Board {
             }
         }
     }
-
 }
