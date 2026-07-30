@@ -30,7 +30,7 @@
             "server": "src/main.server.ts",
             "outputMode": "server",
             "security": {
-              "allowedHosts": []
+              "allowedHosts": ["332a-197-238-252-145.ngrok-free.app"]
             },
             "ssr": {
               "entry": "src/server.ts"
@@ -70,7 +70,10 @@
               "buildTarget": "infinite-minesweeper:build:development"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "development",
+          "options": {
+            "allowedHosts": ["332a-197-238-252-145.ngrok-free.app"]
+          }
         },
         "test": {
           "builder": "@angular/build:unit-test"

@@ -77,6 +77,126 @@ export class Grid {
         }
       }
     }
+    count += this.countAdjacentMinesInNeighboringGrids(row, col, allGrids);
+    return count;
+  }
+  private addNeighborCell(
+    result: NeighborGridCells[],
+    grid: Grid | undefined,
+    cellRow: number,
+    cellCol: number,
+  ) {
+    if (!grid || !grid.getCell(cellRow, cellCol)) {
+      return;
+    }
+
+    let entry = result.find(e => e.gridRow === grid?.gridRow && e.gridCol === grid?.gridCol);
+
+    if (!entry) {
+      entry = {
+        gridRow: grid?.gridRow,
+        gridCol: grid?.gridCol,
+        cells: [],
+      };
+      result.push(entry);
+    }
+    entry.cells.push({ cellRow, cellCol });
+  }
+  getNeighboringGridCells(
+    row: number,
+    col: number,
+    allGrids: Record<number, Record<number, Grid>>,
+  ): NeighborGridCells[] {
+    const result: NeighborGridCells[] = [];
+
+    // Top
+    if (row === 0) {
+      const grid = allGrids[this.gridRow - 1]?.[this.gridCol];
+      if (grid) {
+        for (let c = Math.max(0, col - 1); c <= Math.min(grid.cols - 1, col + 1); c++) {
+          this.addNeighborCell(result, grid, grid.rows - 1, c);
+        }
+      }
+    }
+
+    // Bottom
+    if (row === this.rows - 1) {
+      const grid = allGrids[this.gridRow + 1]?.[this.gridCol];
+      if (grid) {
+        for (let c = Math.max(0, col - 1); c <= Math.min(grid.cols - 1, col + 1); c++) {
+          this.addNeighborCell(result, grid, 0, c);
+        }
+      }
+    }
+
+    // Left
+    if (col === 0) {
+      const grid = allGrids[this.gridRow]?.[this.gridCol - 1];
+      if (grid) {
+        for (let r = Math.max(0, row - 1); r <= Math.min(grid.rows - 1, row + 1); r++) {
+          this.addNeighborCell(result, grid, r, grid.cols - 1);
+        }
+      }
+    }
+
+    // Right
+    if (col === this.cols - 1) {
+      const grid = allGrids[this.gridRow]?.[this.gridCol + 1];
+      if (grid) {
+        for (let r = Math.max(0, row - 1); r <= Math.min(grid.rows - 1, row + 1); r++) {
+          this.addNeighborCell(result, grid, r, 0);
+        }
+      }
+    }
+
+    // Top-left
+    if (row === 0 && col === 0) {
+      const grid = allGrids[this.gridRow - 1]?.[this.gridCol - 1];
+      if (grid) {
+        this.addNeighborCell(result, grid, grid.rows - 1, grid.cols - 1);
+      }
+    }
+
+    // Top-right
+    if (row === 0 && col === this.cols - 1) {
+      const grid = allGrids[this.gridRow - 1]?.[this.gridCol + 1];
+      if (grid) {
+        this.addNeighborCell(result, grid, grid.rows - 1, 0);
+      }
+    }
+
+    // Bottom-left
+    if (row === this.rows - 1 && col === 0) {
+      const grid = allGrids[this.gridRow + 1]?.[this.gridCol - 1];
+      if (grid) {
+        this.addNeighborCell(result, grid, 0, grid.cols - 1);
+      }
+    }
+
+    // Bottom-right
+    if (row === this.rows - 1 && col === this.cols - 1) {
+      const grid = allGrids[this.gridRow + 1]?.[this.gridCol + 1];
+      if (grid) {
+        this.addNeighborCell(result, grid, 0, 0);
+      }
+    }
+
+    return result;
+  }
+  countAdjacentMinesInNeighboringGrids(
+    row: number,
+    col: number,
+    allGrids: Record<number, Record<number, Grid>>,
+  ): number {
+    let count = 0;
+
+    for (const { gridRow, gridCol, cells } of this.getNeighboringGridCells(row, col, allGrids)) {
+      for (const { cellRow, cellCol } of cells) {
+        if (allGrids[gridRow]?.[gridCol]?.getCell(cellRow, cellCol)?.isMine) {
+          count++;
+        }
+      }
+    }
     return count;
   }
 
@@ -109,7 +229,9 @@ export class Grid {
         continue;
       }
       visited.add(visitKey);
-
+      if(!currentGrid.unlocked){
+        Board.unlockGrid(currentGrid);
+      }
       const cell = currentGrid.getCell(currentRow, currentCol);
       if (!cell || cell.isRevealed || cell.isMine || cell.isFlagged) {
         continue;
@@ -132,51 +254,16 @@ export class Grid {
         }
       }
 
-      // Add neighboring cells from adjacent grids at edges
-      if (currentRow === 0) {
-        const neighborGrid = allGrids[currentGrid.gridRow - 1]?.[currentGrid.gridCol];
-        if (neighborGrid) {
-          for (let c = Math.max(0, currentCol - 1); c <= Math.min(neighborGrid.cols - 1, currentCol + 1); c += 1) {
-            const neighborCell = neighborGrid.getCell(neighborGrid.rows - 1, c);
-            if (neighborCell && !neighborCell.isRevealed && !neighborCell.isFlagged) {
-              stack.push([neighborGrid.rows - 1, c, neighborGrid]);
-            }
-          }
-        }
-      }
+      for (const { gridRow, gridCol, cells } of this.getNeighboringGridCells(
+        currentRow,
+        currentCol,
+        allGrids,
+      )) {
+        for (const { cellRow, cellCol } of cells) {
+          const neighborCell = allGrids[gridRow]?.[gridCol]?.getCell(cellRow, cellCol);
 
-      if (currentRow === currentGrid.rows - 1) {
-        const neighborGrid = allGrids[currentGrid.gridRow + 1]?.[currentGrid.gridCol];
-        if (neighborGrid) {
-          for (let c = Math.max(0, currentCol - 1); c <= Math.min(neighborGrid.cols - 1, currentCol + 1); c += 1) {
-            const neighborCell = neighborGrid.getCell(0, c);
-            if (neighborCell && !neighborCell.isRevealed && !neighborCell.isFlagged) {
-              stack.push([0, c, neighborGrid]);
-            }
-          }
-        }
-      }
-
-      if (currentCol === 0) {
-        const neighborGrid = allGrids[currentGrid.gridRow]?.[currentGrid.gridCol - 1];
-        if (neighborGrid) {
-          for (let r = Math.max(0, currentRow - 1); r <= Math.min(neighborGrid.rows - 1, currentRow + 1); r += 1) {
-            const neighborCell = neighborGrid.getCell(r, neighborGrid.cols - 1);
-            if (neighborCell && !neighborCell.isRevealed && !neighborCell.isFlagged) {
-              stack.push([r, neighborGrid.cols - 1, neighborGrid]);
-            }
-          }
-        }
-      }
-
-      if (currentCol === currentGrid.cols - 1) {
-        const neighborGrid = allGrids[currentGrid.gridRow]?.[currentGrid.gridCol + 1];
-        if (neighborGrid) {
-          for (let r = Math.max(0, currentRow - 1); r <= Math.min(neighborGrid.rows - 1, currentRow + 1); r += 1) {
-            const neighborCell = neighborGrid.getCell(r, 0);
-            if (neighborCell && !neighborCell.isRevealed && !neighborCell.isFlagged) {
-              stack.push([r, 0, neighborGrid]);
-            }
+          if (neighborCell && !neighborCell.isRevealed && !neighborCell.isFlagged) {
+            stack.push([cellRow, cellCol, allGrids[gridRow][gridCol]]);
           }
         }
       }
@@ -201,8 +288,8 @@ export class Grid {
   /**
    * Reveal all mines on all grids
    */
-  revealAllMines(board: Board): void {
-    for (const grid of board.allGrids) {
+  revealAllMines(): void {
+    for (const grid of Board.allGrids) {
       grid.board.forEach((row) => {
         row.forEach((cell) => {
           if (cell.isMine) {
