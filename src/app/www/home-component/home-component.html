@@ -15,44 +15,49 @@
 
   <div class="board" role="grid" aria-label="Minesweeper board">
     @for (gridRow of board.rows; track gridRow[0]; let gridRowIndex = $index) {
-      <div class="grid-row">
-        @for (grid of board.getColumnsFor(gridRow[1]); track grid[0]; let gridColIndex = $index) {
-          <div class="grid-container">
-            @for (cellRow of grid[1].board; track cellRow; let cellRowIndex = $index) {
-              <div class="row">
-                @for (cell of cellRow; track cell; let cellColIndex = $index) {
-                  <button
-                    type="button"
-                    class="cell"
-                    [class.pressed]="isPressed(gridRow[0], grid[0], cellRowIndex, cellColIndex) || cell.isRevealed"
-                    [class.flagged]="cell.isFlagged"
-                    [disabled]="gameOver || gameWon"
-                    (click)="revealCell(gridRow[0], grid[0], cellRowIndex, cellColIndex)"
-                    (contextmenu)="toggleFlag($event, gridRow[0], grid[0], cellRowIndex, cellColIndex)"
-                    (mousedown)="onMouseDown(gridRow[0], grid[0], cellRowIndex, cellColIndex)"
-                    (mouseup)="onMouseUp(gridRow[0], grid[0], cellRowIndex, cellColIndex)"
-                    (mouseleave)="onMouseUp(gridRow[0], grid[0], cellRowIndex, cellColIndex)"
-                  >
-                    @if (cell.isRevealed) {
-                      @if (cell.isMine) {
-                        <span>💣</span>
+      <div class="grid-row" [style.grid-template-columns]="gridLayoutColumns">
+        @for (colIndex of board.getColumnRange(board.minCol, board.maxCol); track colIndex) {
+          @let grid = gridRow[1][colIndex];
+          @if (grid) {
+            <div class="grid-container" [class.locked]="!grid.unlocked">
+              @for (cellRow of grid.board; track cellRow; let cellRowIndex = $index) {
+                <div class="row">
+                  @for (cell of cellRow; track cell; let cellColIndex = $index) {
+                    <button
+                      type="button"
+                      class="cell"
+                      [class.pressed]="isPressed(gridRow[0], colIndex, cellRowIndex, cellColIndex) || cell.isRevealed"
+                      [class.flagged]="cell.isFlagged"
+                      [disabled]="gameOver || gameWon || !grid.unlocked"
+                      (click)="revealCell(gridRow[0], colIndex, cellRowIndex, cellColIndex)"
+                      (contextmenu)="toggleFlag($event, gridRow[0], colIndex, cellRowIndex, cellColIndex)"
+                      (mousedown)="onMouseDown(gridRow[0], colIndex, cellRowIndex, cellColIndex)"
+                      (mouseup)="onMouseUp(gridRow[0], colIndex, cellRowIndex, cellColIndex)"
+                      (mouseleave)="onMouseUp(gridRow[0], colIndex, cellRowIndex, cellColIndex)"
+                    >
+                      @if (cell.isRevealed) {
+                        @if (cell.isMine) {
+                          <img src="https://api.iconify.design/mdi/mine.svg?color=%23000" alt="Mine" class="mine-icon" />
+                        }
+                        @if (!cell.isMine && cell.adjacentMines > 0) {
+                          <span [class]="'cell-' + cell.adjacentMines">{{ cell.adjacentMines }}</span>
+                        }
+                        @if (!cell.isMine && cell.adjacentMines === 0) {
+                          <span>·</span>
+                        }
+                      } @else {
+                        @if (cell.isFlagged) {
+                          <span>🚩</span>
+                        }
                       }
-                      @if (!cell.isMine && cell.adjacentMines > 0) {
-                        <span [class]="'cell-' + cell.adjacentMines">{{ cell.adjacentMines }}</span>
-                      }
-                      @if (!cell.isMine && cell.adjacentMines === 0) {
-                        <span>·</span>
-                      }
-                    } @else {
-                      @if (cell.isFlagged) {
-                        <span>🚩</span>
-                      }
-                    }
-                  </button>
-                }
-              </div>
-            }
-          </div>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="grid-container grid-placeholder" aria-hidden="true"></div>
+          }
         }
       </div>
     }

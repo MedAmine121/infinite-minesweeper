@@ -11,8 +11,6 @@ import { Board } from '../../models/board.model';
 })
 export class HomeComponent implements OnInit {
   grids: Grid[][] = [];
-  gridRows = 3;
-  gridCols = 3;
   cellRows = 8;
   cellCols = 8;
   mineCount = 10;
@@ -24,13 +22,24 @@ export class HomeComponent implements OnInit {
   pressedGridCol: number | null = null;
   pressedCellRow: number | null = null;
   pressedCellCol: number | null = null;
-  board: Board = new Board();
+  board = Board;
+
+  get gridLayoutColumns(): string {
+    const columnCount = Math.max(1, Board.maxCol - Board.minCol + 1);
+    return `repeat(${columnCount}, auto)`;
+  }
+
   ngOnInit(): void {
+    this.resetGame();
   }
 
   resetGame(): void {
     // Create 3x3 grid of grids
-    this.board = new Board();
+    Board.init();
+    this.lives = 3;
+    this.score = 0;
+    this.gameOver = false;
+    this.gameWon = false;
   }
 
   revealCell(gridRow: number, gridCol: number, cellRow: number, cellCol: number): void {
@@ -38,7 +47,7 @@ export class HomeComponent implements OnInit {
       return;
     }
 
-    const grid = this.board.grids[gridRow]?.[gridCol];
+    const grid = Board.grids[gridRow]?.[gridCol];
     if (!grid) {
       return;
     }
@@ -55,7 +64,7 @@ export class HomeComponent implements OnInit {
         if (result.exploded) {
           this.lives -= 1;
           if (this.lives <= 0) {
-            this.board.grids[gridRow][gridCol].revealAllMines(this.board);
+            Board.grids[gridRow][gridCol].revealAllMines();
             this.gameOver = true;
           }
           return;
@@ -75,13 +84,13 @@ export class HomeComponent implements OnInit {
       cell.isRevealed = true;
       this.lives -= 1;
       if (this.lives <= 0) {
-        this.board.grids[gridRow][gridCol].revealAllMines(this.board);
+        Board.grids[gridRow][gridCol].revealAllMines();
         this.gameOver = true;
       }
       return;
     }
 
-    const revealedCells = grid.revealArea(cellRow, cellCol, this.board.grids);
+    const revealedCells = grid.revealArea(cellRow, cellCol, Board.grids);
     this.score += revealedCells * 10;
     this.gameWon = this.checkWin();
   }
@@ -93,7 +102,7 @@ export class HomeComponent implements OnInit {
       return;
     }
 
-    const grid = this.board.grids[gridRow]?.[gridCol];
+    const grid = Board.grids[gridRow]?.[gridCol];
     if (!grid) {
       return;
     }
@@ -108,7 +117,7 @@ export class HomeComponent implements OnInit {
 
   countAdjacentFlags(gridRow: number, gridCol: number, cellRow: number, cellCol: number): number {
     let count = 0;
-    const grid = this.board.grids[gridRow][gridCol];
+    const grid = Board.grids[gridRow][gridCol];
 
     for (let r = Math.max(0, cellRow - 1); r <= Math.min(grid.rows - 1, cellRow + 1); r += 1) {
       for (let c = Math.max(0, cellCol - 1); c <= Math.min(grid.cols - 1, cellCol + 1); c += 1) {
@@ -128,16 +137,11 @@ export class HomeComponent implements OnInit {
         const neighborGridRow = gridRow + dRow;
         const neighborGridCol = gridCol + dCol;
 
-        if (
-          neighborGridRow < 0 ||
-          neighborGridRow >= this.gridRows ||
-          neighborGridCol < 0 ||
-          neighborGridCol >= this.gridCols
-        ) {
+        if (!Board.grids[neighborGridRow]?.[neighborGridCol]) {
           continue;
         }
 
-        const neighborGrid = this.board.grids[neighborGridRow][neighborGridCol];
+        const neighborGrid = Board.grids[neighborGridRow][neighborGridCol];
 
         for (let r = Math.max(0, cellRow - 1); r <= Math.min(grid.rows - 1, cellRow + 1); r += 1) {
           for (let c = Math.max(0, cellCol - 1); c <= Math.min(grid.cols - 1, cellCol + 1); c += 1) {
@@ -169,7 +173,7 @@ export class HomeComponent implements OnInit {
     cellCol: number
   ): { exploded: boolean; revealedCells: number } {
     let revealedCount = 0;
-    const grid = this.board.grids[gridRow][gridCol];
+    const grid = Board.grids[gridRow][gridCol];
 
     for (let r = Math.max(0, cellRow - 1); r <= Math.min(grid.rows - 1, cellRow + 1); r += 1) {
       for (let c = Math.max(0, cellCol - 1); c <= Math.min(grid.cols - 1, cellCol + 1); c += 1) {
@@ -179,8 +183,12 @@ export class HomeComponent implements OnInit {
         }
 
         if (cell.isMine) {
-          this.board.grids[gridRow][gridCol].revealAllMines(this.board);
-          return { exploded: true, revealedCells: 0 };
+          this.lives -= 1;
+          if (this.lives <= 0) {
+            Board.grids[gridRow][gridCol].revealAllMines();
+            this.gameOver = true;
+          }
+          return { exploded: true, revealedCells: revealedCount };
         }
 
         cell.isRevealed = true;
@@ -198,16 +206,11 @@ export class HomeComponent implements OnInit {
         const neighborGridRow = gridRow + dRow;
         const neighborGridCol = gridCol + dCol;
 
-        if (
-          neighborGridRow < 0 ||
-          neighborGridRow >= this.gridRows ||
-          neighborGridCol < 0 ||
-          neighborGridCol >= this.gridCols
-        ) {
+        if (!Board.grids[neighborGridRow]?.[neighborGridCol]) {
           continue;
         }
 
-        const neighborGrid = this.board.grids[neighborGridRow][neighborGridCol];
+        const neighborGrid = Board.grids[neighborGridRow][neighborGridCol];
 
         for (let r = Math.max(0, cellRow - 1); r <= Math.min(grid.rows - 1, cellRow + 1); r += 1) {
           for (let c = Math.max(0, cellCol - 1); c <= Math.min(grid.cols - 1, cellCol + 1); c += 1) {
@@ -226,8 +229,6 @@ export class HomeComponent implements OnInit {
               }
 
               if (cell.isMine) {
-                this.board.grids[gridRow][gridCol].revealAllMines(this.board);
-                return { exploded: true, revealedCells: 0 };
               }
 
               cell.isRevealed = true;
@@ -242,7 +243,7 @@ export class HomeComponent implements OnInit {
   }
 
   checkWin(): boolean {
-    for (const grid of this.board.allGrids) {
+    for (const grid of Board.allGrids) {
       const safeCells = grid.board.flat().filter((cell) => !cell.isMine);
       if (!safeCells.every((cell) => cell.isRevealed)) {
         return false;
