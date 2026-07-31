@@ -1,4 +1,4 @@
-type NeighborGridCells = {
+export type NeighborGridCells = {
   gridRow: number;
   gridCol: number;
   cells: {

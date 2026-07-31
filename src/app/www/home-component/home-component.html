@@ -3,70 +3,68 @@
     <div class="hud-left">
       <div class="hud-item">
         <span class="hud-label">Lives</span>
-        <span class="hud-value">{{ '❤️'.repeat(lives) || '💔' }}</span>
+        <span class="hud-value">{{ '❤️'.repeat(homeComponent.lives) || '💔' }}</span>
       </div>
       <div class="hud-item">
         <span class="hud-label">Score</span>
         <span class="hud-value">{{ score }}</span>
       </div>
     </div>
+    <div class="hud-controls">
+      <button class="control-button" type="button" (click)="zoomOut()">−</button>
+      <span class="zoom-value">{{ zoom.toFixed(2) }}×</span>
+      <button class="control-button" type="button" (click)="zoomIn()">+</button>
+    </div>
     <button class="restart-button" type="button" (click)="resetGame()">Restart</button>
   </div>
 
-  <div class="board" role="grid" aria-label="Minesweeper board">
-    @for (gridRow of board.rows; track gridRow[0]; let gridRowIndex = $index) {
-      <div class="grid-row" [style.grid-template-columns]="gridLayoutColumns">
-        @for (colIndex of board.getColumnRange(board.minCol, board.maxCol); track colIndex) {
-          @let grid = gridRow[1][colIndex];
-          @if (grid) {
-            <div class="grid-container" [class.locked]="!grid.unlocked">
-              @for (cellRow of grid.board; track cellRow; let cellRowIndex = $index) {
-                <div class="row">
-                  @for (cell of cellRow; track cell; let cellColIndex = $index) {
-                    <button
-                      type="button"
-                      class="cell"
-                      [class.pressed]="isPressed(gridRow[0], colIndex, cellRowIndex, cellColIndex) || cell.isRevealed"
-                      [class.flagged]="cell.isFlagged"
-                      [disabled]="gameOver || gameWon || !grid.unlocked"
-                      (click)="revealCell(gridRow[0], colIndex, cellRowIndex, cellColIndex)"
-                      (contextmenu)="toggleFlag($event, gridRow[0], colIndex, cellRowIndex, cellColIndex)"
-                      (mousedown)="onMouseDown(gridRow[0], colIndex, cellRowIndex, cellColIndex)"
-                      (mouseup)="onMouseUp(gridRow[0], colIndex, cellRowIndex, cellColIndex)"
-                      (mouseleave)="onMouseUp(gridRow[0], colIndex, cellRowIndex, cellColIndex)"
-                    >
-                      @if (cell.isRevealed) {
-                        @if (cell.isMine) {
-                          <img src="https://api.iconify.design/mdi/mine.svg?color=%23000" alt="Mine" class="mine-icon" />
-                        }
-                        @if (!cell.isMine && cell.adjacentMines > 0) {
-                          <span [class]="'cell-' + cell.adjacentMines">{{ cell.adjacentMines }}</span>
-                        }
-                        @if (!cell.isMine && cell.adjacentMines === 0) {
-                          <span>·</span>
-                        }
-                      } @else {
-                        @if (cell.isFlagged) {
-                          <span>🚩</span>
-                        }
-                      }
-                    </button>
+  <div class="board" role="grid" aria-label="Minesweeper board" (wheel)="onWheel($event)" (mousedown)="startPan($event)">
+    <div class="world-container" [style.transform]="worldTransform">
+      @for (renderedGrid of renderedGrids; track renderedGrid.key) {
+        <div class="grid-container" [class.locked]="!renderedGrid.grid.unlocked" [style.left.px]="renderedGrid.left" [style.top.px]="renderedGrid.top">
+          @for (cellRow of renderedGrid.grid.board; track cellRow; let cellRowIndex = $index) {
+            <div class="row">
+              @for (cell of cellRow; track cell; let cellColIndex = $index) {
+                <button
+                  type="button"
+                  class="cell"
+                  [class.pressed]="isPressed(renderedGrid.grid.gridRow, renderedGrid.grid.gridCol, cellRowIndex, cellColIndex) || cell.isRevealed"
+                  [class.flagged]="cell.isFlagged"
+                  [disabled]="homeComponent.gameOver || homeComponent.gameWon || !renderedGrid.grid.unlocked"
+                  (click)="revealCell(renderedGrid.grid.gridRow, renderedGrid.grid.gridCol, cellRowIndex, cellColIndex)"
+                  (contextmenu)="toggleFlag($event, renderedGrid.grid.gridRow, renderedGrid.grid.gridCol, cellRowIndex, cellColIndex)"
+                  (mousedown)="onMouseDown(renderedGrid.grid.gridRow, renderedGrid.grid.gridCol, cellRowIndex, cellColIndex)"
+                  (mouseup)="onMouseUp(renderedGrid.grid.gridRow, renderedGrid.grid.gridCol, cellRowIndex, cellColIndex)"
+                  (mouseleave)="onMouseUp(renderedGrid.grid.gridRow, renderedGrid.grid.gridCol, cellRowIndex, cellColIndex)"
+                >
+                  @if (cell.isRevealed) {
+                    @if (cell.isMine) {
+                      <img src="https://api.iconify.design/mdi/mine.svg?color=%23000" alt="Mine" class="mine-icon" />
+                    }
+                    @if (!cell.isMine && cell.adjacentMines > 0) {
+                      <span [class]="'cell-' + cell.adjacentMines">{{ cell.adjacentMines }}</span>
+                    }
+                    @if (!cell.isMine && cell.adjacentMines === 0) {
+                      <span>·</span>
+                    }
+                  } @else {
+                    @if (cell.isFlagged) {
+                      <span>🚩</span>
+                    }
                   }
-                </div>
+                </button>
               }
             </div>
-          } @else {
-            <div class="grid-container grid-placeholder" aria-hidden="true"></div>
           }
-        }
-      </div>
-    }
+        </div>
+      }
+    </div>
   </div>
 
-  @if (gameOver || gameWon) {
+  @if (homeComponent.gameOver || homeComponent.gameWon) {
     <div class="game-over-overlay">
       <div class="game-over-card">
-        <h2>{{ gameWon ? 'Victory!' : 'Game Over' }}</h2>
+        <h2>{{ homeComponent.gameWon ? 'Victory!' : 'Game Over' }}</h2>
         <p class="game-over-score">Final score: {{ score }}</p>
         <button type="button" class="restart-button" (click)="resetGame()">Play again</button>
       </div>
