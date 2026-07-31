@@ -1,5 +1,7 @@
+import { HomeComponent } from '../www/home-component/home-component';
 import { Board } from './board.model';
 import { Cell } from './cell.model';
+import type { NeighborGridCells } from './neighboring-grid-cell.model';
 
 export class Grid {
   board: Cell[][] = [];
@@ -78,6 +80,31 @@ export class Grid {
       }
     }
     count += this.countAdjacentMinesInNeighboringGrids(row, col, allGrids);
+    return count;
+  }
+
+  countAdjacentFlagsAndExplodedMines(row: number, col: number, allGrids: Record<number, Record<number, Grid>>): number {
+    let count = 0;
+
+    for (let r = Math.max(0, row - 1); r <= Math.min(this.rows - 1, row + 1); r += 1) {
+      for (let c = Math.max(0, col - 1); c <= Math.min(this.cols - 1, col + 1); c += 1) {
+        if (this.board[r][c].isFlagged) {
+          count += 1;
+        }
+        if (this.board[r][c].isMine && this.board[r][c].isRevealed) {
+          count += 1;
+        }
+      }
+    }
+
+    for (const { gridRow, gridCol, cells } of this.getNeighboringGridCells(row, col, allGrids)) {
+      for (const { cellRow, cellCol } of cells) {
+        if (allGrids[gridRow]?.[gridCol]?.getCell(cellRow, cellCol)?.isFlagged) {
+          count += 1;
+        }
+      }
+    }
+
     return count;
   }
   private addNeighborCell(
@@ -211,6 +238,101 @@ export class Grid {
         }
       }
     }
+  }
+
+  revealCell(
+    row: number,
+    col: number,
+    allGrids: Record<number, Record<number, Grid>>,
+  ): { action: 'none' | 'mine' | 'flood' | 'chord'; exploded: boolean; revealedCells: number } {
+    const cell = this.getCell(row, col);
+
+    if (!cell || cell.isFlagged) {
+      return { action: 'none', exploded: false, revealedCells: 0 };
+    }
+
+    if (cell.isRevealed) {
+      if (cell.adjacentMines > 0 && this.countAdjacentFlagsAndExplodedMines(row, col, allGrids) === cell.adjacentMines) {
+        return {
+          action: 'chord',
+          exploded: false,
+          revealedCells: this.revealAdjacentHiddenCells(row, col, allGrids).revealedCells,
+        };
+      }
+
+      return { action: 'none', exploded: false, revealedCells: 0 };
+    }
+
+    if (cell.isMine) {
+      cell.isRevealed = true;
+      return { action: 'mine', exploded: true, revealedCells: 0 };
+    }
+
+    return {
+      action: 'flood',
+      exploded: false,
+      revealedCells: this.revealArea(row, col, allGrids),
+    };
+  }
+
+  revealAdjacentHiddenCells(
+    row: number,
+    col: number,
+    allGrids: Record<number, Record<number, Grid>>,
+  ): { exploded: boolean; revealedCells: number } {
+    const cell = this.getCell(row, col);
+    if (!cell || !cell.isRevealed || cell.adjacentMines <= 0) {
+      return { exploded: false, revealedCells: 0 };
+    }
+
+    let revealedCount = 0;
+
+    const revealTargetCell = (grid: Grid | undefined, targetRow: number, targetCol: number): boolean => {
+      if (!grid) {
+        return false;
+      }
+
+      const targetCell = grid.getCell(targetRow, targetCol);
+      if (!targetCell || targetCell.isFlagged || targetCell.isRevealed) {
+        return false;
+      }
+
+      if (targetCell.isMine) {
+        targetCell.isRevealed = true;
+        HomeComponent.lives -= 1;
+        if (HomeComponent.lives <= 0) {
+          grid.revealAllMines();
+          HomeComponent.gameOver = true;
+        }
+        return true;
+      }
+
+      targetCell.isRevealed = true;
+      revealedCount += 1;
+      return false;
+    };
+
+    for (let r = Math.max(0, row - 1); r <= Math.min(this.rows - 1, row + 1); r += 1) {
+      for (let c = Math.max(0, col - 1); c <= Math.min(this.cols - 1, col + 1); c += 1) {
+        if (r === row && c === col) {
+          continue;
+        }
+
+        if (revealTargetCell(this, r, c)) {
+          return { exploded: true, revealedCells: revealedCount };
+        }
+      }
+    }
+
+    for (const { gridRow, gridCol, cells } of this.getNeighboringGridCells(row, col, allGrids)) {
+      for (const { cellRow, cellCol } of cells) {
+        if (revealTargetCell(allGrids[gridRow]?.[gridCol], cellRow, cellCol)) {
+          return { exploded: true, revealedCells: revealedCount };
+        }
+      }
+    }
+
+    return { exploded: false, revealedCells: revealedCount };
   }
 
   /**
