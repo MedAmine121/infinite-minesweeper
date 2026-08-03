@@ -376,7 +376,7 @@ export class Grid {
         }
       }
 
-      for (const { gridRow, gridCol, cells } of this.getNeighboringGridCells(
+      for (const { gridRow, gridCol, cells } of currentGrid.getNeighboringGridCells(
         currentRow,
         currentCol,
         allGrids,
